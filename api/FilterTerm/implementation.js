@@ -35,6 +35,76 @@ const TERM_ID = "attachmentfilter#attachmentNameOrExtension";
 const TERM_NAME = "Attachment name / extension";
 
 /* ------------------------------------------------------------------ */
+/* Deployed settings override                                          */
+/*                                                                     */
+/* Lets an administrator drop a JSON file in the profile directory to   */
+/* force settings on a machine (e.g. via fleet deployment), taking      */
+/* precedence over whatever is stored in the add-on's own storage. The  */
+/* file is read from <profile>/attachment-guard.config.json and may      */
+/* contain JS-style comments and trailing commas (JSONC) so it stays    */
+/* human-editable. See README for the format and per-OS profile paths.  */
+/* ------------------------------------------------------------------ */
+
+const CONFIG_FILENAME = "attachment-guard.config.json";
+let configCache = { mtime: -1, data: null };
+
+function configPath() {
+  return PathUtils.join(PathUtils.profileDir, CONFIG_FILENAME);
+}
+
+// Strip // and /* */ comments and trailing commas, respecting string literals,
+// so a deployed config file can be annotated and still parse as JSON.
+function stripJsonc(src) {
+  let out = "";
+  let inStr = false, quote = "", inLine = false, inBlock = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i], d = src[i + 1];
+    if (inLine) { if (c === "\n") { inLine = false; out += c; } continue; }
+    if (inBlock) { if (c === "*" && d === "/") { inBlock = false; i++; } continue; }
+    if (inStr) {
+      out += c;
+      if (c === "\\") { out += (d || ""); i++; continue; }
+      if (c === quote) inStr = false;
+      continue;
+    }
+    if (c === '"' || c === "'") { inStr = true; quote = c; out += c; continue; }
+    if (c === "/" && d === "/") { inLine = true; i++; continue; }
+    if (c === "/" && d === "*") { inBlock = true; i++; continue; }
+    out += c;
+  }
+  return out.replace(/,(\s*[}\]])/g, "$1");
+}
+
+// Read + parse the override file, caching by modification time so that polling
+// it on every new message is cheap (just a stat unless the file changed).
+async function readConfigOverride() {
+  const path = configPath();
+  let info;
+  try {
+    info = await IOUtils.stat(path);
+  } catch (e) {
+    configCache = { mtime: -1, data: null };   // file absent => no override
+    return null;
+  }
+  const mtime = info.lastModified || 0;
+  if (mtime !== configCache.mtime) {
+    try {
+      const text = await IOUtils.readUTF8(path);
+      const data = JSON.parse(stripJsonc(text));
+      configCache = {
+        mtime,
+        data: (data && typeof data === "object" && !Array.isArray(data)) ? data : null
+      };
+    } catch (e) {
+      // Don't apply a broken file — keep the previous behaviour and log.
+      Cu.reportError("[Attachment Guard] Ignoring invalid config override: " + e);
+      configCache = { mtime, data: null };
+    }
+  }
+  return configCache.data;
+}
+
+/* ------------------------------------------------------------------ */
 /* Matching helpers (self-contained: a registered custom term must not  */
 /* depend on anything that can be unloaded with the add-on).            */
 /* ------------------------------------------------------------------ */
@@ -267,6 +337,12 @@ var FilterTerm = class extends ExtensionCommon.ExtensionAPI {
             Cu.reportError(e);
             throw e;
           }
+        },
+        async getConfigOverride() {
+          return readConfigOverride();
+        },
+        async getConfigPath() {
+          return configPath();
         }
       }
     };

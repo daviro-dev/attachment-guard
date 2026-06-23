@@ -58,6 +58,46 @@ all-accounts automation — any Thunderbird *Message Filter* you built with the
 “Attachment name / extension” condition keeps working, because that term is
 registered independently at startup.
 
+## Deployed settings override (fleet / domain management)
+
+For managing many machines, you can force settings with a JSON file dropped in
+each user's **profile directory** — no need to touch the add-on's settings page.
+The file **takes precedence** over whatever the user has saved (file > stored
+settings > built-in defaults).
+
+- **File name:** `attachment-guard.config.json`
+- **Location:** the active Thunderbird/Betterbird **profile** folder, e.g.
+  - Windows: `%APPDATA%\Thunderbird\Profiles\<profile>\` (Betterbird:
+    `%APPDATA%\Betterbird\Profiles\<profile>\`)
+  - Linux: `~/.thunderbird/<profile>/`
+  - macOS: `~/Library/Thunderbird/Profiles/<profile>/`
+- **Format:** JSON, with JS-style `//` and `/* */` comments and trailing commas
+  allowed (so it stays human-editable). Any key from the settings page can be
+  set; **only the keys you include are forced**, the rest stay user-editable.
+- See **`attachment-guard.config.example.json`** in this repo for a documented
+  template with every key.
+- **Move destination** can be written as a human-friendly reference (the
+  internal `accountId` differs per machine, so it's resolved on each PC):
+  - `"destination": "Local Folders/Quarantine"` — `Account/Folder/Sub…` string
+  - `"destination": { "account": "user@work.com", "path": "/Quarantine" }`
+  - `"destination": { "account": "Work", "path": "/Junk/Blocked" }` — by name
+
+  The account ref matches `Local Folders`, an account's display name, its id, or
+  any of its identity email addresses; the folder must already exist. The raw
+  `{ "accountId": …, "path": … }` form still works; `null` falls back to Local
+  Folders Trash.
+
+Changes are picked up automatically on the next received message or manual scan
+(the file is re-read when its modification time changes — no restart required;
+the one exception is `monitorAllFolders`, whose re-subscription applies on the
+next received message or at startup). When the file is forcing one or more
+settings, the add-on's settings page shows a notice listing the managed keys and
+the file path. Delete the file to return full control to the user.
+
+> The exact path the add-on is looking at is shown in that on-page notice (and
+> is available via the experiment's `FilterTerm.getConfigPath()`), which is the
+> easiest way to confirm where to deploy on a given machine.
+
 ## Development / tests
 
 The filename-matching logic lives in `matcher.js` (a plain module shared by the

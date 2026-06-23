@@ -162,6 +162,23 @@ select {
   max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
+/* Managed-settings notice */
+.managed-notice {
+  background: color-mix(in srgb, #f59e0b 14%, var(--card));
+  border: 1px solid color-mix(in srgb, #f59e0b 45%, var(--line));
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.managed-notice p { margin: 6px 0 0; color: var(--ink); }
+.managed-notice code {
+  background: color-mix(in srgb, #f59e0b 18%, transparent);
+  padding: 1px 5px; border-radius: 5px; font-size: 12px;
+  overflow-wrap: anywhere;
+}
+#managed-keys { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+
 /* Help / support */
 .help-fab {
   position: fixed;

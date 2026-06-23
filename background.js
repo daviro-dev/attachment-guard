@@ -53,7 +53,13 @@ const DEFAULT_SETTINGS = {
 const MAX_LOG_ENTRIES = 100;
 let activityLog = [];
 
+// `baseSettings` = defaults merged with what's stored in the add-on's storage.
+// `settings`     = the *effective* settings: baseSettings with any keys from a
+//                  deployed override file (attachment-guard.config.json) applied
+//                  on top. `overriddenKeys` lists which keys the file controls.
+let baseSettings = { ...DEFAULT_SETTINGS };
 let settings = { ...DEFAULT_SETTINGS };
+let overriddenKeys = [];
 let mailListener = null;
 
 // Tag used by the "Mark & warn" action to flag a message in the list and to
@@ -89,6 +95,80 @@ async function findLocalFoldersTrash() {
   return null;
 }
 
+// Recursively search an account's folder tree for a folder whose path matches.
+function findFolderByPath(account, path) {
+  const root = account.rootFolder || { subFolders: account.folders || [] };
+  const want = path.toLowerCase();
+  const walk = (folders) => {
+    for (const f of folders || []) {
+      if ((f.path || "").toLowerCase() === want) return f;
+      const hit = walk(f.subFolders);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  return walk(root.subFolders);
+}
+
+// Match an account by a human-friendly reference: "Local Folders", the account
+// name, the account id, or any of its identity email addresses.
+function findAccountByRef(accounts, ref) {
+  const r = String(ref || "").trim().toLowerCase();
+  if (!r) return null;
+  // "Local Folders" => the local (type "none") account.
+  if (r === "local folders" || r === "local") {
+    const local = accounts.find(a => a.type === "none");
+    if (local) return local;
+  }
+  return accounts.find(a =>
+    a.id.toLowerCase() === r ||
+    (a.name || "").toLowerCase() === r ||
+    (a.identities || []).some(id => (id.email || "").toLowerCase() === r)
+  ) || null;
+}
+
+// Turn a (possibly human-friendly) destination reference into the canonical
+// { accountId, path, name } object the move action needs. Accepts:
+//   - null                              -> Local Folders Trash (or null)
+//   - { accountId, path }               -> used as-is (already canonical)
+//   - "Local Folders/Junk"              -> string "AccountRef/Folder/Sub..."
+//   - { account: "<name|email|id>", path: "/Quarantine" }
+async function resolveDestination(ref) {
+  if (ref == null) return await findLocalFoldersTrash();
+  if (typeof ref === "object" && ref.accountId && ref.path) return ref;
+
+  let accountRef, path;
+  if (typeof ref === "string") {
+    const parts = ref.replace(/^\/+/, "").split("/");
+    accountRef = parts.shift();
+    path = "/" + parts.join("/");
+  } else if (typeof ref === "object") {
+    accountRef = ref.account || ref.accountName || ref.accountEmail || ref.accountId;
+    path = ref.path || "/";
+    if (!path.startsWith("/")) path = "/" + path;
+  } else {
+    return null;
+  }
+
+  try {
+    const accounts = await messenger.accounts.list();
+    const account = findAccountByRef(accounts, accountRef);
+    if (!account) {
+      console.warn(`[Attachment Guard] Override destination: no account matches "${accountRef}".`);
+      return null;
+    }
+    const folder = findFolderByPath(account, path);
+    if (!folder) {
+      console.warn(`[Attachment Guard] Override destination: account "${accountRef}" has no folder "${path}".`);
+      return null;
+    }
+    return { accountId: account.id, path: folder.path, name: folder.name };
+  } catch (e) {
+    console.warn("[Attachment Guard] Could not resolve override destination:", e);
+    return null;
+  }
+}
+
 async function loadActivityLog() {
   const stored = await messenger.storage.local.get("activityLog");
   activityLog = Array.isArray(stored.activityLog) ? stored.activityLog : [];
@@ -106,12 +186,44 @@ async function recordActivity(entry) {
 
 async function loadSettings() {
   const stored = await messenger.storage.local.get("settings");
-  settings = { ...DEFAULT_SETTINGS, ...(stored.settings || {}) };
+  baseSettings = { ...DEFAULT_SETTINGS, ...(stored.settings || {}) };
   // When no destination has been chosen yet, default to Local Folders Trash
   // (falling back to null if that folder does not exist).
-  if (settings.destination == null) {
-    settings.destination = await findLocalFoldersTrash();
+  if (baseSettings.destination == null) {
+    baseSettings.destination = await findLocalFoldersTrash();
   }
+  await applyOverride();
+  return settings;
+}
+
+// Pull the deployed override file (if any) and recompute `settings` from
+// `baseSettings`. Only keys that are real settings are honoured; the file wins.
+// Cheap to call repeatedly — the experiment caches the file by mtime.
+async function applyOverride() {
+  let override = null;
+  try {
+    override = await messenger.FilterTerm.getConfigOverride();
+  } catch (e) {
+    console.warn("[Attachment Guard] Could not read config override:", e);
+  }
+  const next = { ...baseSettings };
+  const keys = [];
+  if (override && typeof override === "object") {
+    for (const key of Object.keys(override)) {
+      if (key in DEFAULT_SETTINGS) {
+        next[key] = override[key];
+        keys.push(key);
+      }
+    }
+  }
+  // A deployed file may give the move destination as a human-friendly reference
+  // (account name/email + path) instead of the per-profile { accountId, path }
+  // object; resolve it to the canonical form on this machine.
+  if (keys.includes("destination")) {
+    next.destination = await resolveDestination(next.destination);
+  }
+  settings = next;
+  overriddenKeys = keys;
   return settings;
 }
 
@@ -264,6 +376,13 @@ async function processMessage(message) {
 /* ------------------------------------------------------------------ */
 
 async function onNewMail(folder, messageList) {
+  // Re-read the deployed override so a freshly deployed file takes effect
+  // without restarting Thunderbird. If it flips folder monitoring, re-subscribe.
+  const prevMonitorAll = settings.monitorAllFolders;
+  await applyOverride();
+  if (settings.monitorAllFolders !== prevMonitorAll) {
+    registerMailListener();
+  }
   if (!settings.enabled) return;
   let list = messageList;
   while (list) {
@@ -289,6 +408,7 @@ function registerMailListener() {
 /* ------------------------------------------------------------------ */
 
 async function scanFolder(folderSpec) {
+  await applyOverride();   // honour the latest deployed override for manual scans
   const result = { scanned: 0, matched: 0 };
   let page = await messenger.messages.list(folderSpec);
   while (page) {
@@ -369,6 +489,16 @@ async function onMessageDisplayed(tab, message) {
 messenger.runtime.onMessage.addListener((msg) => {
   if (msg && msg.command === "scanFolder" && msg.folder) {
     return scanFolder(msg.folder);
+  }
+  // The options page asks which settings (if any) a deployed file is forcing,
+  // so it can show a "managed" notice and the effective values.
+  if (msg && msg.command === "getOverrideInfo") {
+    return (async () => {
+      await applyOverride();
+      let path = null;
+      try { path = await messenger.FilterTerm.getConfigPath(); } catch (e) { /* ignore */ }
+      return { active: overriddenKeys.length > 0, keys: overriddenKeys, path, settings };
+    })();
   }
   return false;
 });

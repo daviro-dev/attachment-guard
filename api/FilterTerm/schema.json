@@ -8,6 +8,20 @@
         "description": "Register the 'Attachment extension' custom search term so it appears in Thunderbird's Message Filters and Search dialogs. Idempotent.",
         "async": true,
         "parameters": []
+      },
+      {
+        "name": "getConfigOverride",
+        "type": "function",
+        "description": "Read the deployed settings-override file from the profile directory (attachment-guard.config.json). Returns the parsed object, or null if the file is absent or invalid. Result is cached and only re-read when the file's modification time changes.",
+        "async": true,
+        "parameters": []
+      },
+      {
+        "name": "getConfigPath",
+        "type": "function",
+        "description": "Return the absolute path of the settings-override file the add-on looks for in the profile directory.",
+        "async": true,
+        "parameters": []
       }
     ]
   }

@@ -16,6 +16,15 @@
       </div>
     </header>
 
+    <section id="managed-notice" class="managed-notice" hidden>
+      <strong>⚙ Some settings are managed by a deployed config file.</strong>
+      <p>The settings listed below are forced by
+        <code id="managed-path">attachment-guard.config.json</code> in this profile and
+        take precedence over anything saved here. Editing them on this page has no effect
+        until the file is changed or removed.</p>
+      <p>Managed: <span id="managed-keys"></span></p>
+    </section>
+
     <form id="settings-form">
       <div class="actions-bar top">
         <button type="submit" class="btn primary">Save settings</button>

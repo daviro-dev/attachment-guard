@@ -1,0 +1,60 @@
+{
+  // Attachment Guard — deployed settings override (example)
+  //
+  // Copy this file to your Thunderbird/Betterbird PROFILE directory and rename
+  // it to exactly:  attachment-guard.config.json
+  //
+  // Any key you include here OVERRIDES the matching setting on that machine and
+  // takes precedence over whatever the user has saved on the add-on's settings
+  // page. Keys you omit are left under the user's control. Delete the file to
+  // hand full control back to the user. Changes are picked up automatically
+  // (on the next received message / manual scan — no restart needed).
+  //
+  // JS-style // and /* */ comments and trailing commas are allowed.
+
+  // Turn the automatic all-accounts filtering on/off.
+  "enabled": true,
+
+  // Also watch archive/special folders, not just Inbox & normal folders.
+  "monitorAllFolders": false,
+
+  // Block list. Bare token = match by extension ("exe", ".docm"); tokens with
+  // wildcards are globs on the whole filename ("*.tar.gz", "invoice*",
+  // "*.r[0-9][0-9]"). Replaces the user's list entirely.
+  "patterns": [
+    "exe", "com", "scr", "pif", "cpl", "msi", "bat", "cmd", "hta",
+    "js", "jse", "vbs", "vbe", "wsf", "wsh", "jar", "lnk",
+    "docm", "xlsm", "pptm", "iso", "img", "*.r[0-9][0-9]"
+  ],
+
+  // Only act on real attachments, ignoring inline parts (e.g. signature logos).
+  "attachmentsOnly": true,
+
+  // Senders/domains never filtered. Case-insensitive substring of the sender.
+  "exemptSenders": [
+    "@yourcompany.com"
+  ],
+
+  // What to do on a match: "move" | "markRead" | "markWarn" | "delete".
+  "action": "move",
+
+  // Destination for "move". Use a human-friendly reference — it is resolved to
+  // the right account on each machine (the internal accountId differs per PC):
+  //   "destination": "Local Folders/Quarantine"            // string: Account/Folder/Sub
+  //   "destination": { "account": "user@work.com", "path": "/Quarantine" }
+  //   "destination": { "account": "Work", "path": "/Junk/Blocked" }   // by account name
+  // The folder must already exist. null falls back to Local Folders Trash.
+  "destination": "Local Folders/Trash",
+
+  // For "move": also mark the moved message as read.
+  "markReadOnMove": true,
+
+  // For "delete": skip Trash and delete permanently (irreversible).
+  "deletePermanently": false,
+
+  // Desktop notification on each match.
+  "notify": false,
+
+  // Record filtered messages to the on-page activity log.
+  "logActivity": false
+}

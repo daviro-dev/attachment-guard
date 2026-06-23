@@ -232,6 +232,23 @@ async function init() {
 
   applySettingsToForm(settings);
 
+  // If a deployed override file is forcing settings on this machine, show a
+  // notice and reflect the effective (file-forced) values in the form.
+  try {
+    const info = await messenger.runtime.sendMessage({ command: "getOverrideInfo" });
+    if (info && info.active) {
+      if (info.settings) {
+        applySettingsToForm({ ...settings, ...info.settings });
+        fillFolderSelect($("destination"), folders, info.settings.destination || selectedDest);
+      }
+      $("managed-keys").textContent = info.keys.join(", ");
+      if (info.path) $("managed-path").textContent = info.path;
+      $("managed-notice").hidden = false;
+    }
+  } catch (e) {
+    console.warn("Could not get override info:", e);
+  }
+
   document.querySelectorAll('input[name="action"]').forEach(r =>
     r.addEventListener("change", updateActionDetails));
 
