@@ -23,7 +23,7 @@
     "open_in_tab": true
   },
   "browser_action": {
-    "default_title": "Attachment Guard settings",
+    "default_title": "Attachment Guard",
     "default_icon": "icons/icon.svg"
   },
   "permissions": [
