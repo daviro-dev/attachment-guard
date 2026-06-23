@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attachment Guard settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="page-head">
+      <img class="logo" src="../icons/icon.svg" alt="">
+      <div>
+        <h1>Attachment Guard</h1>
+        <p class="sub">Automatically handle incoming mail based on attachment file type — across every account.</p>
+      </div>
+    </header>
+
+    <form id="settings-form">
+      <div class="actions-bar top">
+        <button type="submit" class="btn primary">Save settings</button>
+        <span id="save-status" class="status" role="status" aria-live="polite"></span>
+      </div>
+
+      <!-- Enable -->
+      <section class="card">
+        <label class="switch-row">
+          <input type="checkbox" id="enabled">
+          <span class="switch-label">
+            <strong>Enable automatic filtering</strong>
+            <small>Inspect each newly received message and act on matches.</small>
+          </span>
+        </label>
+        <label class="switch-row">
+          <input type="checkbox" id="monitorAllFolders">
+          <span class="switch-label">
+            <strong>Monitor all folders</strong>
+            <small>Also watch archive and other special folders, not just Inbox &amp; normal folders.</small>
+          </span>
+        </label>
+      </section>
+
+      <!-- Patterns -->
+      <section class="card">
+        <h2>Block list</h2>
+        <p class="hint">One rule per line. A bare token like <code>exe</code> or <code>.docm</code> matches by
+          file <em>extension</em>. Use wildcards for filename patterns:
+          <code>*</code> = any text, <code>?</code> = any single character,
+          <code>[0-9]</code> = one character from a set/range (e.g. <code>[a-f]</code>, <code>[abc]</code>;
+          prefix <code>!</code> to negate, like <code>[!0-9]</code>).
+          Examples: <code>invoice*</code>, <code>*.tar.gz</code>, <code>*.p??</code>,
+          <code>*.r[0-9][0-9]</code> (split-RAR archives, digits only).</p>
+        <textarea id="patterns" rows="9" spellcheck="false"
+          placeholder="exe&#10;scr&#10;*.tar.gz&#10;invoice*.docm"></textarea>
+        <label class="inline-check" style="margin-top:12px;">
+          <input type="checkbox" id="attachmentsOnly">
+          Only match real attachments (ignore inline images such as embedded signature logos)
+        </label>
+      </section>
+
+      <!-- Trusted senders -->
+      <section class="card">
+        <h2>Trusted senders</h2>
+        <p class="hint">Mail from these senders is <strong>never</strong> filtered, even if it carries a
+          blocked attachment. One per line — a full address (<code>jane@partner.com</code>) or a domain
+          (<code>@gmail.com</code>). Matched case-insensitively against the sender.</p>
+        <textarea id="exemptSenders" rows="4" spellcheck="false"
+          placeholder="@gmail.com&#10;jane@partner.com"></textarea>
+      </section>
+
+      <!-- Action -->
+      <section class="card">
+        <h2>When a message matches</h2>
+
+        <label class="radio-row">
+          <input type="radio" name="action" value="move">
+          <span><strong>Move to a folder</strong><small>Relocate the message. Original stays intact.</small></span>
+        </label>
+
+        <div class="action-detail" data-for="move">
+          <label class="field">
+            <span>Destination folder</span>
+            <select id="destination"></select>
+          </label>
+          <label class="inline-check">
+            <input type="checkbox" id="markReadOnMove">
+            Mark moved messages as read
+          </label>
+        </div>
+
+        <label class="radio-row">
+          <input type="radio" name="action" value="markRead">
+          <span><strong>Mark as read only</strong><small>Leave the message in place, just clear the unread state.</small></span>
+        </label>
+
+        <label class="radio-row">
+          <input type="radio" name="action" value="markWarn">
+          <span><strong>Mark &amp; warn (leave in place)</strong><small>Tag the message with a red “⚠ Dangerous attachment” label and show a warning banner when it is opened.</small></span>
+        </label>
+
+        <label class="radio-row danger">
+          <input type="radio" name="action" value="delete">
+          <span><strong>Delete</strong><small>Remove the message immediately.</small></span>
+        </label>
+
+        <div class="action-detail" data-for="delete">
+          <label class="inline-check">
+            <input type="checkbox" id="deletePermanently">
+            Delete permanently (skip Trash) — irreversible
+          </label>
+        </div>
+      </section>
+
+      <!-- Notifications -->
+      <section class="card">
+        <label class="switch-row">
+          <input type="checkbox" id="notify">
+          <span class="switch-label">
+            <strong>Show a notification on each match</strong>
+            <small>A desktop notification naming the message and the rule that matched.</small>
+          </span>
+        </label>
+      </section>
+    </form>
+
+    <!-- Manual scan -->
+    <section class="card">
+      <h2>Scan an existing folder</h2>
+      <p class="hint">Apply the rules and action above to messages already in a folder (uses your current,
+        <em>saved</em> settings). Useful for cleaning out a backlog.</p>
+      <div class="scan-row">
+        <select id="scan-folder"></select>
+        <button type="button" id="scan-btn" class="btn">Scan now</button>
+      </div>
+      <p id="scan-status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- Activity log -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Activity log</h2>
+        <button type="button" id="clear-log" class="btn small">Clear log</button>
+      </div>
+      <label class="switch-row">
+        <input type="checkbox" id="logActivity">
+        <span class="switch-label">
+          <strong>Record filtered messages</strong>
+          <small>Keep a list of the most recent matches (subject, sender, rule, action). Saved in settings; turn off to stop recording.</small>
+        </span>
+      </label>
+      <div id="log-container">
+        <p class="hint" id="log-empty">No activity recorded yet.</p>
+        <table id="log-table" hidden>
+          <thead>
+            <tr><th>When</th><th>Sender</th><th>Subject</th><th>Matched</th><th>Action</th></tr>
+          </thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card subtle">
+      <h2>Custom rules in Thunderbird</h2>
+      <p class="hint">This add-on also registers an <strong>“Attachment name / extension”</strong> condition in
+        Thunderbird's <em>Tools&nbsp;→&nbsp;Message&nbsp;Filters</em> and Search dialogs. Use it there to build
+        rules combining attachment type with sender, subject, and any other criteria, with Thunderbird's full
+        set of actions.</p>
+    </section>
+
+    <div class="actions-bar bottom">
+      <button type="button" id="reset-all" class="btn">Reset all settings to defaults</button>
+      <span id="reset-status" class="status" role="status" aria-live="polite"></span>
+    </div>
+  </main>
+
+  <!-- Support / help -->
+  <button type="button" id="help-fab" class="help-fab" aria-haspopup="dialog"
+    aria-controls="support-modal" title="About &amp; support">?</button>
+
+  <div id="support-modal" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="support-title">
+      <button type="button" class="modal-close" id="support-close" aria-label="Close">&times;</button>
+      <h2 id="support-title">Enjoying Attachment Guard?</h2>
+      <p class="hint">This add-on is free and open source. If it saves you time, you can support
+        its development with a coffee — thank you! ☕</p>
+      <a class="bmc-link" href="https://buymeacoffee.com/daviro" target="_blank" rel="noopener noreferrer">
+        buymeacoffee.com/daviro
+      </a>
+      <img class="bmc-qr" src="../icons/buymeacoffee-qr.png"
+        alt="QR code linking to buymeacoffee.com/daviro" width="200" height="200">
+      <p class="hint qr-cap">Scan to open the support page on your phone.</p>
+      <p class="repo-link">
+        Source &amp; issues:<br>
+        <a href="https://github.com/daviro-dev/attachment-guard" target="_blank" rel="noopener noreferrer">
+          <svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          github.com/daviro-dev/attachment-guard
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

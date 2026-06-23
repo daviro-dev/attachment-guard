@@ -1,0 +1,50 @@
+{
+  "manifest_version": 2,
+  "name": "Attachment Guard",
+  "version": "1.0.4",
+  "description": "Automatically screen incoming mail by attachment file type across all accounts. Match by extension or filename wildcards (*, ?, [0-9]) and move, mark read, delete, or tag-and-warn (banner shown when opened) any message carrying a blocked attachment. Includes trusted-sender exemptions, manual folder scanning, an optional activity log, and an 'Attachment name / extension' condition for Thunderbird's native Message Filters.",
+  "author": "daviro",
+  "applications": {
+    "gecko": {
+      "id": "attachment-filter@daviro.dev",
+      "strict_min_version": "128.0"
+    }
+  },
+  "icons": {
+    "32": "icons/icon.svg",
+    "48": "icons/icon.svg",
+    "64": "icons/icon.svg"
+  },
+  "background": {
+    "scripts": ["matcher.js", "background.js"]
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "browser_action": {
+    "default_title": "Attachment Guard settings",
+    "default_icon": "icons/icon.svg"
+  },
+  "permissions": [
+    "accountsRead",
+    "messagesRead",
+    "messagesMove",
+    "messagesDelete",
+    "messagesUpdate",
+    "messagesModify",
+    "messagesTags",
+    "storage",
+    "notifications"
+  ],
+  "experiment_apis": {
+    "FilterTerm": {
+      "schema": "api/FilterTerm/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "paths": [["FilterTerm"]],
+        "script": "api/FilterTerm/implementation.js"
+      }
+    }
+  }
+}

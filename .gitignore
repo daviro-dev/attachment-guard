@@ -1,0 +1,23 @@
+# Build artifacts
+*.xpi
+
+# Claude Code (harness metadata, memory, config)
+.claude/
+.claude*
+CLAUDE.md
+.mcp.json
+
+# Reference material — Expression Search NG (not part of this project)
+.base-expression_search_ng/
+*expression*search*
+*expression_search*
+expression-search*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*~
+*.bak
+
+# Node (only used for tests; none committed)
+node_modules/

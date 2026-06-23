@@ -1,0 +1,14 @@
+[
+  {
+    "namespace": "FilterTerm",
+    "functions": [
+      {
+        "name": "registerTerm",
+        "type": "function",
+        "description": "Register the 'Attachment extension' custom search term so it appears in Thunderbird's Message Filters and Search dialogs. Idempotent.",
+        "async": true,
+        "parameters": []
+      }
+    ]
+  }
+]
