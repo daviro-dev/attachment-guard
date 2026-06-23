@@ -5,8 +5,6 @@ All notable changes to **Attachment Guard** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ## [1.0.5] - 2026-06-23
 
 ### Added
@@ -63,6 +61,5 @@ First public release on GitHub, rebranded from "Attachment Filter" to
   **reset-to-defaults** action.
 - Released under the **Mozilla Public License 2.0**.
 
-[Unreleased]: https://github.com/daviro-dev/attachment-guard/compare/v1.0.5...HEAD
 [1.0.5]: https://github.com/daviro-dev/attachment-guard/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/daviro-dev/attachment-guard/releases/tag/v1.0.4
