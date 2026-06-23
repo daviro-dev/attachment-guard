@@ -6,7 +6,7 @@
   "author": "daviro",
   "applications": {
     "gecko": {
-      "id": "attachment-filter@daviro.dev",
+      "id": "attachment-guard@daviro.dev",
       "strict_min_version": "128.0"
     }
   },
