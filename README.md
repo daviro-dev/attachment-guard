@@ -3,6 +3,8 @@
 A focused Thunderbird (128 ESR / 140+) MailExtension that handles incoming mail
 based on **attachment file type**.
 
+Version history is in [CHANGELOG.md](CHANGELOG.md).
+
 ## What it does
 
 1. **Automatic filtering of received mail on all accounts.**
