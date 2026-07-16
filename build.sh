@@ -5,18 +5,17 @@
 # Usage:
 #   ./build.sh            # -> ./web-ext-artifacts/attachment-guard-<version>.xpi
 #   ./build.sh out.xpi    # -> ./out.xpi
-#   ./build.sh dist       # lint + build a clean, review-ready .xpi for ATN
+#   ./build.sh dist       # lint + build a clean, release-ready .xpi
 #
-# This is a Thunderbird MailExtension distributed via addons.thunderbird.net
-# (ATN). ATN does NOT sign add-ons or expose an upload API/keys the way
-# Firefox/AMO does — you upload the .xpi through the ATN Developer Hub web form.
+# This is a self-distributed Thunderbird MailExtension. It is NOT on
+# addons.thunderbird.net (ATN): ATN does not accept new submissions using
+# Experiment APIs, and this add-on ships the FilterTerm experiment. Thunderbird
+# does not require signing, so the .xpi below installs as-is.
 # The 'dist' target just runs web-ext lint and packages a clean artifact.
 # See RELEASING.md.
 set -euo pipefail
 
 cd "$(dirname "$0")"
-
-ATN_UPLOAD_URL="https://addons.thunderbird.net/developers/"
 
 # --- What ships -------------------------------------------------------------
 # The build is an ALLOWLIST: only these paths are added to the archive, so
@@ -32,6 +31,7 @@ CONTENTS=(manifest.json matcher.js background.js options icons api README.md)
 EXCLUDES=(
   '*/.*'                 # dotfiles in subdirectories (.DS_Store, .gitkeep, …)
   '.*'                   # dotfiles at the archive root
+  'icons/icon.png'       # 1024px listing artwork; the add-on loads icons/icon.svg
   '*Zone.Identifier'     # WSL / NTFS alternate-data-stream artifacts
   '*~'                   # editor backups
   '*.bak'
@@ -91,13 +91,15 @@ if [[ "$DO_DIST" == "yes" ]]; then
     -o -name '*.bak' -o -name '*.orig' -o -name '*.swp' \
     -o -name 'Thumbs.db' -o -name 'node_modules' \) \
     -exec rm -rf {} + 2>/dev/null || true
+  # Keep the staged tree in sync with EXCLUDES above.
+  rm -f "$STAGE/icons/icon.png"
 
   echo "Linting (web-ext lint) — advisory, does not block the build…"
   if ! npx --yes web-ext lint --source-dir "$STAGE"; then
     echo "" >&2
     echo "Note: web-ext lint reported issues. It is AMO-oriented and may flag" >&2
-    echo "Thunderbird-only APIs (experiment_apis, mail permissions) that ATN" >&2
-    echo "accepts. Review the output above; continuing with the build." >&2
+    echo "Thunderbird-only APIs (experiment_apis, mail permissions) that" >&2
+    echo "Thunderbird accepts. Review the output above; continuing with the build." >&2
   fi
 fi
 
@@ -122,8 +124,12 @@ if [[ "$DO_DIST" == "yes" ]]; then
 Release package ready:
   $OUT_ABS
 
-Thunderbird (ATN) does not sign add-ons or provide an upload API — upload this
-.xpi manually via the ATN Developer Hub, then add the version notes:
-  $ATN_UPLOAD_URL
+This add-on is self-distributed — publish the .xpi and tag the release. No
+signing step is required; users install via Add-ons Manager > gear >
+"Install Add-on From File…". See RELEASING.md.
+
+Note: from Thunderbird 153 the Release channel disables Experiment APIs, so the
+Message Filters condition and config override only work on ESR 153 (and
+Betterbird). Core attachment screening is unaffected.
 EOF
 fi

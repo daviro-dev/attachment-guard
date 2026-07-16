@@ -14,6 +14,10 @@ CLAUDE.md
 *expression_search*
 expression-search*
 
+# Listing artwork — 1024px raster for the ATN store page, not shipped in the
+# .xpi (the add-on itself loads icons/icon.svg). Also excluded in build.sh.
+icons/icon.png
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db

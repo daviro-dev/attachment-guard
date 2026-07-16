@@ -5,6 +5,26 @@ based on **attachment file type**.
 
 Version history is in [CHANGELOG.md](CHANGELOG.md).
 
+## Installing
+
+Attachment Guard is **self-distributed** — it is not on addons.thunderbird.net,
+which no longer accepts new submissions that use Experiment APIs. Download the
+`.xpi` and install it via Add-ons Manager → gear → *Install Add-on From File…*.
+Thunderbird does not require signing for this. See
+[RELEASING.md](RELEASING.md).
+
+> **Channel note (Thunderbird 153+).** Thunderbird disables Experiment APIs on
+> the monthly **Release** channel starting with version 153; **ESR 153 keeps
+> them** (as does Betterbird). Attachment screening — the core of this add-on —
+> works on either. But two features depend on the experiment and are silently
+> unavailable on Release 153+:
+>
+> - the **"Attachment name / extension"** condition in native Message Filters
+>   and Search, and
+> - the **deployed settings override** file described below.
+>
+> If you rely on those, stay on **ESR**.
+
 ## What it does
 
 1. **Automatic filtering of received mail on all accounts.**

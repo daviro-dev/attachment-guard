@@ -5,6 +5,30 @@ All notable changes to **Attachment Guard** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-07-16
+
+### Changed
+- **Attachment Guard is now self-distributed** and will not be listed on
+  addons.thunderbird.net. ATN is not accepting new submissions that use
+  Experiment APIs unless they are unmodified copies of a published API draft;
+  no published draft registers a custom filter term, so the `FilterTerm`
+  experiment behind the "Attachment name / extension" condition has no
+  replacement. Install the `.xpi` directly — no signing required. See
+  `RELEASING.md`.
+- Raised `strict_max_version` to `153.*` (was `152.*`). The old cap existed only
+  to satisfy an ATN packaging rule that no longer applies, and it blocked
+  installation on **ESR 153** — the channel where Experiment APIs continue to
+  work.
+- Packaging: the 1024px listing icon (`icons/icon.png`) is kept out of the
+  `.xpi`. The add-on's own icons are unchanged (`icons/icon.svg`).
+
+### Notes
+- **Thunderbird 153 disables Experiment APIs on the monthly Release channel;
+  ESR 153 keeps them.** Attachment screening is plain WebExtension code and is
+  unaffected on either channel. The Message Filters condition and the deployed
+  settings override depend on the experiment and fail soft (logged warning,
+  feature absent) on Release 153+. Stay on ESR or Betterbird if you use them.
+
 ## [1.0.6] - 2026-07-16
 
 ### Changed
