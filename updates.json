@@ -1,0 +1,19 @@
+{
+  "addons": {
+    "attachment-guard@daviro.dev": {
+      "updates": [
+        {
+          "version": "1.0.7",
+          "update_link": "https://github.com/daviro-dev/attachment-guard/releases/download/v1.0.7/attachment-guard-1.0.7.xpi",
+          "update_hash": "sha256:14f2f3fa60a73259532c5334ca2e3cb5d915f1691d2b511106235cc0cda98784",
+          "applications": {
+            "gecko": {
+              "strict_min_version": "128.0",
+              "strict_max_version": "153.*"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

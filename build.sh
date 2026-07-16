@@ -119,6 +119,43 @@ echo "Built $OUT_ABS"
 unzip -l "$OUT_ABS"
 
 if [[ "$DO_DIST" == "yes" ]]; then
+  # --- Update manifest ------------------------------------------------------
+  # updates.json is what installed copies poll (applications.gecko.update_url).
+  # It is regenerated from manifest.json + the hash of the .xpi just built, so
+  # the two can never drift — a stale update_hash makes Thunderbird silently
+  # refuse the update. It is NOT part of CONTENTS and never ships inside the
+  # .xpi. Commit and push it, and attach the .xpi to the matching GitHub
+  # release, or the update_link 404s. See RELEASING.md.
+  echo "Regenerating updates.json…"
+  node - "$OUT_ABS" <<'NODE'
+const fs = require("fs");
+const crypto = require("crypto");
+const m = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+const gecko = m.applications.gecko;
+const hash = crypto.createHash("sha256")
+  .update(fs.readFileSync(process.argv[2]))
+  .digest("hex");
+const out = {
+  addons: {
+    [gecko.id]: {
+      updates: [{
+        version: m.version,
+        update_link: `https://github.com/daviro-dev/attachment-guard/releases/download/v${m.version}/attachment-guard-${m.version}.xpi`,
+        update_hash: `sha256:${hash}`,
+        applications: {
+          gecko: {
+            strict_min_version: gecko.strict_min_version,
+            strict_max_version: gecko.strict_max_version,
+          },
+        },
+      }],
+    },
+  },
+};
+fs.writeFileSync("updates.json", JSON.stringify(out, null, 2) + "\n");
+console.log(`  updates.json -> ${m.version}  sha256:${hash.slice(0, 12)}…`);
+NODE
+
   cat <<EOF
 
 Release package ready:
@@ -127,6 +164,10 @@ Release package ready:
 This add-on is self-distributed — publish the .xpi and tag the release. No
 signing step is required; users install via Add-ons Manager > gear >
 "Install Add-on From File…". See RELEASING.md.
+
+Do not forget: commit the regenerated updates.json and push it to main, and
+attach the .xpi above to the v${VERSION} GitHub release. Installed copies poll
+updates.json; if its update_hash or update_link is wrong, updates fail silently.
 
 Note: from Thunderbird 153 the Release channel disables Experiment APIs, so the
 Message Filters condition and config override only work on ESR 153 (and

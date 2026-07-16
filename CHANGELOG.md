@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Packaging: the 1024px listing icon (`icons/icon.png`) is kept out of the
   `.xpi`. The add-on's own icons are unchanged (`icons/icon.svg`).
 
+### Added
+- **Automatic updates for the self-distributed build.** The manifest now sets
+  `update_url`, and installed copies poll `updates.json` in this repository, so
+  new releases arrive the same way they used to from the add-on site. This only
+  applies from 1.0.7 on — earlier builds have no `update_url` and must be
+  reinstalled once by hand.
+
 ### Notes
 - **Thunderbird 153 disables Experiment APIs on the monthly Release channel;
   ESR 153 keeps them.** Attachment screening is plain WebExtension code and is
