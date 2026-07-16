@@ -5,6 +5,14 @@ All notable changes to **Attachment Guard** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-07-16
+
+### Changed
+- Declared `strict_max_version` `152.*` in the manifest. Thunderbird's add-on
+  site (ATN) requires a max version for add-ons that ship a Mail Experiment
+  (this add-on's `FilterTerm` experiment API); supported range is now
+  Thunderbird 128–152.
+
 ## [1.0.5] - 2026-06-23
 
 ### Added
@@ -61,5 +69,6 @@ First public release on GitHub, rebranded from "Attachment Filter" to
   **reset-to-defaults** action.
 - Released under the **Mozilla Public License 2.0**.
 
+[1.0.6]: https://github.com/daviro-dev/attachment-guard/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/daviro-dev/attachment-guard/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/daviro-dev/attachment-guard/releases/tag/v1.0.4
